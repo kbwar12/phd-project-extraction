@@ -1,0 +1,145 @@
+version: "3.9"
+services:
+  neo4j:
+    image: neo4j:5.25-community
+    container_name: dual_neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/neo4jpass
+      - NEO4J_dbms_memory_heap_max__size=2G
+      - NEO4J_dbms_security_auth__enabled=true
+      - NEO4JLABS_PLUGINS=["apoc"]
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+    deploy:
+      resources:
+        reservations:
+         devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
+    restart: unless-stopped
+
+  app:
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+    container_name: dual_app
+    depends_on:
+      - neo4j
+      - ollama
+    env_file:
+      - ../.env
+    volumes:
+      - ../src:/app/src
+      - ../data:/app/data
+      - ../outputs:/app/outputs
+      - ../config:/app/config
+      - huggingface_cache:/app/.cache/huggingface
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    command: ["tail", "-f", "/dev/null"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  gui-main:
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+    container_name: dual_gui_main
+    depends_on:
+      - neo4j
+      - ollama
+      - app
+    env_file:
+      - ../.env
+    ports:
+      - "8501:8501"
+    volumes:
+      - ../src:/app/src
+      - ../data:/app/data
+      - ../outputs:/app/outputs
+      - ../config:/app/config
+      - huggingface_cache:/app/.cache/huggingface
+    working_dir: /app
+    command: ["streamlit", "run", "src/gui/streamlit_app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  gui-troubleshooting:
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+    container_name: dual_gui_troubleshooting
+    depends_on:
+      - neo4j
+      - ollama
+      - app
+    env_file:
+      - ../.env
+    ports:
+      - "8502:8502"
+    volumes:
+      - ../src:/app/src
+      - ../data:/app/data
+      - ../outputs:/app/outputs
+      - ../config:/app/config
+      - huggingface_cache:/app/.cache/huggingface
+    working_dir: /app
+    command: ["streamlit", "run", "src/gui/troubleshooting.py", "--server.port", "8502", "--server.address", "0.0.0.0"]
+
+  gui-config:
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+    container_name: dual_gui_config
+    depends_on:
+      - neo4j
+      - ollama
+      - app
+    env_file:
+      - ../.env
+    ports:
+      - "8503:8503"
+    volumes:
+      - ../src:/app/src
+      - ../data:/app/data
+      - ../outputs:/app/outputs
+      - ../config:/app/config
+      - huggingface_cache:/app/.cache/huggingface
+    working_dir: /app
+    command: ["streamlit", "run", "src/gui/config_manager.py", "--server.port", "8503", "--server.address", "0.0.0.0"]
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
+  ollama_models:
+  huggingface_cache:
+

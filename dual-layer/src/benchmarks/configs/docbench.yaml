@@ -1,0 +1,8 @@
+dataset: docbench
+data_dir: ./data
+pdf_dir: ./data/pdfs
+markdown_dir: ./data/markdown
+neo4j_uri: bolt://localhost:7687
+neo4j_user: neo4j
+neo4j_password: password
+max_samples: 10  # Limit for testing; remove for full benchmark
