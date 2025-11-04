@@ -4,6 +4,26 @@ This guide covers setting up the enhanced knowledge graph extraction pipeline wi
 
 ## 🚀 Quick Start
 
+### Prerequisites
+
+**Important:** This setup requires GPU support and expects Ollama to run in a separate container.
+
+1. **Set up Ollama separately** (run this first):
+   ```bash
+   docker run -d --gpus all --name ollama -p 11434:11434 \
+     -v ollama_models:/root/.ollama \
+     -e OLLAMA_KEEP_ALIVE=24h \
+     ollama/ollama:latest
+   
+   # Pull the model
+   docker exec -it ollama ollama pull qwen3:latest
+   ```
+
+2. **GPU Requirements:**
+   - NVIDIA GPU with CUDA support
+   - NVIDIA Docker runtime installed
+   - Docker with GPU support enabled
+
 ### Option 1: Use the Start Script (Recommended)
 
 ```bash
@@ -14,7 +34,7 @@ bash start-gui.sh
 This script will:
 - Create the `.env` file with enhanced configuration
 - Start all Docker containers (including GUIs)
-- Pull the Ollama model (Qwen3:latest)
+- Note: Ollama must be running separately (see Prerequisites)
 - Initialize the enhanced knowledge graph
 - Test the enhanced pipeline
 
@@ -23,17 +43,16 @@ This script will:
 ```bash
 cd dual-layer/docker
 
-# 1. Create environment file
+# 1. Ensure Ollama is running separately (see Prerequisites above)
+
+# 2. Create environment file
 bash setup-env.sh
 
-# 2. Start all services
+# 3. Start all services
 docker compose up -d
 
-# 3. Wait for services to be ready
+# 4. Wait for services to be ready
 sleep 30
-
-# 4. Pull Ollama model
-docker exec -it ollama ollama pull qwen3:latest
 
 # 5. Initialize knowledge graph
 docker exec -it dual_app python src/cli/main.py init
@@ -41,29 +60,6 @@ docker exec -it dual_app python src/cli/main.py init
 # 6. Test enhanced pipeline
 docker exec -it dual_app python test_enhanced_pipeline.py
 ```
-
-## 🔧 Configuration Options
-
-### Standard Setup (CPU Only)
-
-Use the standard `docker-compose.yml` for CPU-only operation:
-
-```bash
-docker compose up -d
-```
-
-### GPU-Enabled Setup (Recommended for Hugging Face)
-
-For GPU acceleration with Hugging Face models:
-
-```bash
-docker compose -f docker-compose.gpu.yml up -d
-```
-
-**GPU Requirements:**
-- NVIDIA GPU with CUDA support
-- NVIDIA Docker runtime installed
-- Docker with GPU support enabled
 
 ## 📋 Environment Variables
 
@@ -139,7 +135,18 @@ print('✅ Knowledge graph integration working')
 
 #### 1. Ollama Model Not Loading
 
+**Note:** Ollama runs in a separate container. Ensure it's running:
+
 ```bash
+# Check if Ollama container is running
+docker ps | grep ollama
+
+# If not running, start it:
+docker run -d --gpus all --name ollama -p 11434:11434 \
+  -v ollama_models:/root/.ollama \
+  -e OLLAMA_KEEP_ALIVE=24h \
+  ollama/ollama:latest
+
 # Check Ollama status
 docker exec -it ollama ollama list
 
@@ -147,7 +154,7 @@ docker exec -it ollama ollama list
 docker exec -it ollama ollama pull qwen3:latest
 
 # Check Ollama logs
-docker compose logs ollama
+docker logs ollama
 ```
 
 #### 2. Hugging Face Model Issues
@@ -240,8 +247,10 @@ docker compose logs -f
 
 # Specific services
 docker compose logs -f neo4j
-docker compose logs -f ollama
 docker compose logs -f gui-main
+
+# Note: Ollama logs (runs separately)
+docker logs ollama
 
 # App container logs
 docker exec -it dual_app tail -f /dev/null
@@ -263,7 +272,7 @@ curl http://localhost:7474             # Neo4j
 ### Update Models
 
 ```bash
-# Update Ollama model
+# Update Ollama model (runs separately)
 docker exec -it ollama ollama pull qwen3:latest
 
 # Update Hugging Face model (clear cache first)
@@ -279,6 +288,8 @@ docker compose up -d --build
 
 # Rebuild specific services
 docker compose up -d --build gui-main
+
+# Note: Ollama runs separately and doesn't need rebuilding unless you want to update the image
 ```
 
 ### Backup and Restore

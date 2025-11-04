@@ -2,6 +2,26 @@
 
 ## 🚀 Fastest Way to Get Started with DocBench
 
+### Prerequisites
+
+**Important:** Ollama must be running in a separate container before starting the other services.
+
+1. **Set up Ollama separately** (run this first):
+   ```bash
+   docker run -d --gpus all --name ollama -p 11434:11434 \
+     -v ollama_models:/root/.ollama \
+     -e OLLAMA_KEEP_ALIVE=24h \
+     ollama/ollama:latest
+   
+   # Pull the model
+   docker exec -it ollama ollama pull qwen3:latest
+   ```
+
+2. **GPU Requirements:**
+   - NVIDIA GPU with CUDA support
+   - NVIDIA Docker runtime installed
+   - Docker with GPU support enabled
+
 ### Option 1: Use the Start Script (Recommended)
 
 ```bash
@@ -12,7 +32,7 @@ bash start-gui.sh
 This script will:
 - Create the `.env` file if it doesn't exist
 - Start all Docker containers (including GUIs)
-- Pull the Ollama model
+- Note: Ollama must be running separately (see Prerequisites)
 - Initialize DocBench knowledge graph
 
 ### Option 2: Manual Start
@@ -20,19 +40,18 @@ This script will:
 ```bash
 cd dual-layer/docker
 
-# Create .env file if needed
+# 1. Ensure Ollama is running separately (see Prerequisites above)
+
+# 2. Create .env file if needed
 bash setup-env.sh
 
-# Start all services
+# 3. Start all services
 docker compose up -d
 
-# Wait for services to be ready
+# 4. Wait for services to be ready
 sleep 30
 
-# Pull Ollama model
-docker exec -it ollama ollama pull qwen3:latest
-
-# Initialize DocBench knowledge graph
+# 5. Initialize DocBench knowledge graph
 docker exec -it dual_app python src/cli/main.py init
 ```
 
@@ -178,6 +197,6 @@ docker exec -it dual_neo4j cypher-shell -u neo4j -p neo4jpass
 docker exec -it dual_app python src/cli/main.py [command]
 
 # Check service health
-curl http://localhost:11434/api/tags  # Ollama
+curl http://localhost:11434/api/tags  # Ollama (runs separately)
 curl http://localhost:7474             # Neo4j
 ```

@@ -11,27 +11,34 @@ cd docker
 docker compose up -d
 ```
 
+**Note:** Ollama must be running in a separate container named `ollama`. See Prerequisites below.
+
 This will start:
 - **Neo4j** on port 7474 (Browser) and 7687 (Bolt)
-- **Ollama** on port 11434 (with Qwen3:latest)
-- **Main App** container for CLI operations (with Hugging Face support)
+- **Main App** container for CLI operations (with GPU support for Hugging Face)
 - **GUI Main** on http://localhost:8501
 - **GUI Troubleshooting** on http://localhost:8502
 - **GUI Config** on http://localhost:8503
 
-### 2. GPU Support (Optional)
+### Prerequisites
 
-For GPU acceleration with Hugging Face models, use the GPU-enabled configuration:
-
+**1. Set up Ollama separately** (run this first):
 ```bash
-# Use GPU-enabled Docker Compose
-docker compose -f docker-compose.gpu.yml up -d
+docker run -d --gpus all --name ollama -p 11434:11434 \
+  -v ollama_models:/root/.ollama \
+  -e OLLAMA_KEEP_ALIVE=24h \
+  ollama/ollama:latest
+
+# Pull the model
+docker exec -it ollama ollama pull qwen3:latest
 ```
 
-**Requirements for GPU support:**
+**2. GPU Requirements:**
 - NVIDIA GPU with CUDA support
 - NVIDIA Docker runtime installed
 - Docker with GPU support enabled
+
+**Note:** This setup is GPU-enabled by default. All containers are configured for GPU acceleration.
 
 ### 3. Access the Enhanced GUIs
 

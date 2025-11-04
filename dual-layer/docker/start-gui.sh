@@ -40,8 +40,9 @@ echo "🔍 Checking service status..."
 docker compose ps
 
 echo ""
-echo "📥 Setting up Ollama model (if needed)..."
-docker exec -it ollama ollama pull qwen3:latest || echo "Model may already be installed"
+echo "ℹ️  Note: Ollama should be running in a separate container named 'ollama'"
+echo "   Ensure Ollama is running with: docker run -d --gpus all --name ollama -p 11434:11434 ollama/ollama:latest"
+echo "   Then pull the model: docker exec -it ollama ollama pull qwen3:latest"
 
 echo ""
 echo "🤗 Setting up Hugging Face model (if needed)..."
